@@ -20,6 +20,7 @@ type
     FResponse: IDelphiAIDevAIResponse;
   protected
     function GetResponse(const AQuestion: string): IDelphiAIDevAIResponse;
+    function ListModels: string;
   public
     constructor Create(const ASettings: TDelphiAIDevSettings; const AResponse: IDelphiAIDevAIResponse);
   end;
@@ -28,6 +29,43 @@ implementation
 
 const
   API_JSON_BODY_BASE = '{"contents": [{"parts": [ {"text": "%s"}]}]}';
+
+function TDelphiAIDevAIGemini.ListModels: string;
+var
+  LApiUrl: string;
+  LResponse: IResponse;
+  LJsonValueAll: TJSONVALUE;
+  LJsonArrayModels: TJsonArray;
+  LItem: Integer;
+  LResult: string;
+begin
+  Result := '';
+  LApiUrl := 'https://generativelanguage.googleapis.com/v1beta/models?key=' + FSettings.ApiKeyGemini;
+  LResponse := TRequest.New
+    .BaseURL(LApiUrl)
+    .Accept(TConsts.APPLICATION_JSON)
+    .Get;
+
+  if LResponse.StatusCode = 200 then
+  begin
+    LJsonValueAll := TJsonObject.ParseJSONValue(LResponse.Content);
+    if (LJsonValueAll is TJSONObject) then
+    begin
+      LJsonArrayModels := (LJsonValueAll as TJsonObject).GetValue<TJsonArray>('models');
+      for LItem := 0 to Pred(LJsonArrayModels.Count) do
+      begin
+        LResult := LResult + (LJsonArrayModels.Items[LItem] as TJsonObject).GetValue<string>('name') + sLineBreak;
+      end;
+    end
+    else
+      Result := 'Could not parse the response from the server.';
+  end
+  else
+    Result := 'Error fetching models: ' + LResponse.Content;
+
+  if Trim(LResult) <> '' then
+    Result := LResult;
+end;
 
 constructor TDelphiAIDevAIGemini.Create(const ASettings: TDelphiAIDevSettings; const AResponse: IDelphiAIDevAIResponse);
 begin

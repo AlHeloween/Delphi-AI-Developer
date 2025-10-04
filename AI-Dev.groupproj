@@ -1,0 +1,62 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{D3C96F69-6030-4AC0-B62A-F6CF454877B1}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Package\DelphiAIDeveloper.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="TestHarness\TestAIHarness.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="DelphiAIDeveloper">
+        <MSBuild Projects="Package\DelphiAIDeveloper.dproj"/>
+    </Target>
+    <Target Name="DelphiAIDeveloper:Clean">
+        <MSBuild Projects="Package\DelphiAIDeveloper.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="DelphiAIDeveloper:Make">
+        <MSBuild Projects="Package\DelphiAIDeveloper.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="TestAIHarness">
+        <MSBuild Projects="TestHarness\TestAIHarness.dproj"/>
+    </Target>
+    <Target Name="TestAIHarness:Clean">
+        <MSBuild Projects="TestHarness\TestAIHarness.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TestAIHarness:Make">
+        <MSBuild Projects="TestHarness\TestAIHarness.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="DelphiAIDeveloper;TestAIHarness"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="DelphiAIDeveloper:Clean;TestAIHarness:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="DelphiAIDeveloper:Make;TestAIHarness:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+    <ItemGroup Condition="'$(BuildGroup)'=='Build And Test'">
+        <BuildGroupProject Include="Package\DelphiAIDeveloper.dproj">
+            <ProjectGuid>{7EF46619-47CC-4A26-9369-BCDD8C5ECFA8}</ProjectGuid>
+            <Configurations>Debug</Configurations>
+            <Platforms>Win32</Platforms>
+            <Enabled>True</Enabled>
+        </BuildGroupProject>
+        <BuildGroupProject Include="TestHarness\TestAIHarness.dproj">
+            <ProjectGuid>{CBEAE176-B680-4A51-BFC2-AE285A21B1B0}</ProjectGuid>
+            <Configurations>Debug</Configurations>
+            <Platforms>Win32</Platforms>
+            <Enabled>True</Enabled>
+        </BuildGroupProject>
+    </ItemGroup>
+</Project>

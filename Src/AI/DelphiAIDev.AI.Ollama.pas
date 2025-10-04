@@ -19,6 +19,7 @@ type
     FResponse: IDelphiAIDevAIResponse;
   protected
     function GetResponse(const AQuestion: string): IDelphiAIDevAIResponse;
+    function ListModels: string;    
   public
     constructor Create(const ASettings: TDelphiAIDevSettings; const AResponse: IDelphiAIDevAIResponse);
   end;
@@ -91,6 +92,11 @@ begin
 
   LJsonObjMessage := LJsonValueMessage as TJSONObject;
   FResponse.SetContentText(TJSONString(LJsonObjMessage.GetValue('content')).Value.Trim);
+end;
+
+function TDelphiAIDevAIOllama.ListModels: string;
+begin
+  Result := '';
 end;
 
 end.

@@ -29,6 +29,7 @@ type
     class function ShowMsgInternal(const AMsg, ADetails: string; const AIcon: TC4DIcon;
       const AButtons: TC4DButtons; const ABtnFocu: TC4DBtnFocu; const AWinControlFocu: TWinControl): Boolean;
   public
+    class procedure TryGetValueJson<T>(const AJSONObject: TJSONObject; const AKey: string; var AResult: T);
     class function GetExceptionMessage(const E: Exception): string;
     class function StrToDefaultsQuestionsKind(Value: string): TC4DQuestionKind;
     class function StrToDriverID(Value: string): TC4DDriverID;
@@ -147,6 +148,12 @@ uses
   DelphiAIDev.View.Memo,
   DelphiAIDev.View.Dialog,
   DelphiAIDev.WaitingScreen;
+
+class procedure TUtils.TryGetValueJson<T>(const AJSONObject: TJSONObject; const AKey: string; var AResult: T);
+begin
+  if AJSONObject.GetValue(AKey) <> nil then
+    AResult := AJSONObject.GetValue<T>(AKey);
+end;
 
 class function TUtils.GetExceptionMessage(const E: Exception): string;
 begin
@@ -974,7 +981,7 @@ end;
 
 class function TUtils.RemoveAccents(AValue: string): string;
 const
-  WITH_ACCENTS = 'àâêôûãõáéíóúçüÀÂÊÔÛÃÕÁÉÍÓÚÇÜ';
+  WITH_ACCENTS = 'ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½';
   OUT_ACCENTS = 'aaeouaoaeioucuAAEOUAOAEIOUCU';
 var
   I: Integer;
@@ -988,7 +995,7 @@ end;
 
 class function TUtils.SwapSymbols(AValue: string): string;
 const
-  SYMBOLS_OLD = 'ºª&®½¼ßµþýÝ¨æÆø£Øƒª¿|~^´`';
+  SYMBOLS_OLD = 'ï¿½ï¿½&ï¿½ï¿½ï¿½ßµï¿½ï¿½Ý¨ï¿½ï¿½ï¿½ï¿½Øƒï¿½ï¿½|~^ï¿½`';
   SYMBOLS_NEW = 'oae   BupyY   o 0faw     ';
 var
   I: Integer;

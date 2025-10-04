@@ -5,6 +5,7 @@ interface
 uses
   System.SysUtils,
   System.Win.Registry,
+  System.Classes,
   Winapi.Windows,
   Vcl.Graphics,
   DelphiAIDev.Types,
@@ -14,6 +15,9 @@ uses
 
 type
   TDelphiAIDevSettings = class
+  private
+    FGeminiModels: TStringList;
+    procedure SetGeminiModels(const Value: TStringList);
   private const
     FIELD_LanguageQuestions = 'LanguageQuestions';
     FIELD_AIDefault = 'AIDefault';
@@ -75,10 +79,11 @@ type
     FModelOllama: string;
     FApiKeyOllama: string;
 
-    constructor Create;
     procedure ValidateFillingSelectedAIInternal(
       const AShowMsg: TShowMsg; const AAiUse: TC4DAiAvailable);
   public
+    constructor Create;
+    destructor Free;
     class function GetInstance: TDelphiAIDevSettings;
     procedure LoadDefaults;
     procedure SaveData;
@@ -98,6 +103,7 @@ type
     property CodeCompletionSuggestionColor: TColor read FCodeCompletionSuggestionColor write FCodeCompletionSuggestionColor;
     property CodeCompletionShortcutInvoke: string read FCodeCompletionShortcutInvoke write FCodeCompletionShortcutInvoke;
     property CodeCompletionDefaultPrompt: string read FCodeCompletionDefaultPrompt write FCodeCompletionDefaultPrompt;
+    property GeminiModels: TStringList read FGeminiModels write SetGeminiModels;
 
     property BaseUrlGemini: string read FBaseUrlGemini write FBaseUrlGemini;
     property ModelGemini: string read FModelGemini write FModelGemini;
@@ -134,7 +140,14 @@ end;
 
 constructor TDelphiAIDevSettings.Create;
 begin
+  inherited;
+  FGeminiModels := TStringList.Create;
   Self.LoadDefaults;
+end;
+
+destructor TDelphiAIDevSettings.Free;
+begin
+  FGeminiModels.Free;
 end;
 
 procedure TDelphiAIDevSettings.LoadDefaults;
@@ -221,6 +234,11 @@ begin
   finally
     LReg.Free;
   end;
+end;
+
+procedure TDelphiAIDevSettings.SetGeminiModels(const Value: TStringList);
+begin
+  FGeminiModels.Assign(Value);
 end;
 
 procedure TDelphiAIDevSettings.LoadData;
@@ -411,9 +429,9 @@ begin
 end;
 
 initialization
+  Instance:=TDelphiAIDevSettings.Create;
 
 finalization
   if Assigned(Instance) then
     FreeAndNil(Instance);
-
 end.

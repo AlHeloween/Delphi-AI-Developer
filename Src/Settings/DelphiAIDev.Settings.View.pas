@@ -3,6 +3,7 @@ unit DelphiAIDev.Settings.View;
 interface
 
 uses
+  System.Threading,
   Winapi.Windows,
   Winapi.Messages,
   System.SysUtils,
@@ -153,6 +154,7 @@ type
     procedure btnApiKeyMistralViewClick(Sender: TObject);
   private
     FSettings: TDelphiAIDevSettings;
+    procedure LoadGeminiModels;
     procedure SaveSettings;
     procedure LoadSettings;
     procedure ConfigScreen;
@@ -175,7 +177,10 @@ implementation
 
 uses
   DelphiAIDev.Utils,
-  DelphiAIDev.Utils.OTA;
+  DelphiAIDev.Utils.OTA,
+  DelphiAIDev.AI.Gemini,
+  DelphiAIDev.AI.Interfaces,
+  DelphiAIDev.AI.Response;
 
 {$R *.dfm}
 
@@ -195,6 +200,7 @@ begin
   FSettings.LoadData;
   Self.ConfigScreen;
   Self.LoadSettings;
+  Self.LoadGeminiModels;
 end;
 
 procedure TDelphiAIDevSettingsView.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -410,6 +416,7 @@ begin
   if cBoxModelOllama.ItemIndex < 0 then
     cBoxModelOllama.Text := FSettings.ModelOllama;
   edtApiKeyOllama.Text := FSettings.ApiKeyOllama;
+  cBoxModelGemini.Items.Assign(FSettings.GeminiModels);
 end;
 
 procedure TDelphiAIDevSettingsView.SaveSettings;
@@ -447,6 +454,8 @@ begin
   FSettings.BaseUrlOllama := edtBaseUrlOllama.Text;
   FSettings.ModelOllama := cBoxModelOllama.Text;
   FSettings.ApiKeyOllama := edtApiKeyOllama.Text;
+
+  FSettings.GeminiModels.Assign(cBoxModelGemini.Items);
 
   FSettings.SaveData;
 end;
@@ -516,6 +525,49 @@ begin
   pnIAsOffLineBack.Visible := False;
   pnCodeCompletionBack.Visible := False;
   APanel.Visible := True;
+end;
+
+procedure TDelphiAIDevSettingsView.LoadGeminiModels;
+var
+  LGemini: IDelphiAIDevAI;
+  LResponse: IDelphiAIDevAIResponse;
+begin
+  if (cBoxModelGemini.Items.Count = 0) and (Trim(edtApiKeyGemini.Text) <> '') then
+  begin
+    LResponse := TDelphiAIDevAIResponse.Create;
+    FSettings.ApiKeyGemini := edtApiKeyGemini.Text;
+    LGemini := TDelphiAIDevAIGemini.Create(FSettings, LResponse);
+    TTask.Run(procedure
+    begin
+      TThread.Synchronize(nil, procedure
+      begin
+        Screen.Cursor := crHourGlass;
+      end);
+      try
+        try
+          FSettings.GeminiModels.Text := LGemini.ListModels;
+          TThread.Synchronize(nil, procedure
+          begin
+            cBoxModelGemini.Items.Assign(FSettings.GeminiModels);
+            if cBoxModelGemini.Items.Count > 0 then
+            begin
+              cBoxModelGemini.ItemIndex := cBoxModelGemini.Items.IndexOf(FSettings.ModelGemini);
+              if cBoxModelGemini.ItemIndex < 0 then
+              cBoxModelGemini.ItemIndex := 0;
+            end;
+          end);
+        except
+          on E: Exception do
+            TUtils.ShowMsg('Error loading Gemini models: ' + E.Message);
+        end;
+      finally
+        TThread.Synchronize(nil, procedure
+        begin
+          Screen.Cursor := crDefault;
+        end);
+      end;
+    end);
+  end;
 end;
 
 end.

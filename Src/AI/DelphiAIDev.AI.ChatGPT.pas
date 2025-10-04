@@ -19,6 +19,7 @@ type
     FResponse: IDelphiAIDevAIResponse;
   protected
     function GetResponse(const AQuestion: string): IDelphiAIDevAIResponse;
+    function ListModels: string;    
   public
     constructor Create(const ASettings: TDelphiAIDevSettings; const AResponse: IDelphiAIDevAIResponse);
   end;
@@ -100,6 +101,11 @@ begin
   end;
 
   FResponse.SetContentText(LResult.Trim);
+end;
+
+function TDelphiAIDevAIChatGPT.ListModels: string;
+begin
+  Result := '';
 end;
 
 end.
