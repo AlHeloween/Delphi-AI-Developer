@@ -1,0 +1,200 @@
+unit TestAIHarness.View.Main;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
+  Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
+  Vcl.ComCtrls, // Added for TPageControl and TTrackBar
+  DelphiAIDev.Types, DelphiAIDev.Settings, DelphiAIDev.AI.Facade, DelphiAIDev.AI.Interfaces,
+  DelphiAIDev.AI.Response, DelphiAIDev.AI.Gemini;
+
+type
+  TFormTestAIHarness = class(TForm)
+    pnlTop: TPanel;
+    pnlClient: TPanel;
+    pnlBottom: TPanel;
+    GroupBox1: TGroupBox;
+    Label1: TLabel;
+    cboAIProvider: TComboBox;
+    Label2: TLabel;
+    edtApiKey: TEdit;
+    btnListModels: TButton;
+    btnSend: TButton;
+    GroupBox2: TGroupBox;
+    mmPrompt: TMemo;
+    GroupBox3: TGroupBox;
+    mmResponse: TMemo;
+    Splitter1: TSplitter;
+    pcMain: TPageControl;
+    tsSendRequest: TTabSheet;
+    tsListModels: TTabSheet;
+    Label3: TLabel;
+    Label4: TLabel;
+    Label5: TLabel;
+    tbTemperature: TTrackBar;
+    tbTopP: TTrackBar;
+    lblTemperatureValue: TLabel;
+    lblTopPValue: TLabel;
+    edtMaxOutputTokens: TEdit;
+    procedure FormCreate(Sender: TObject);
+    procedure btnSendClick(Sender: TObject);
+    procedure btnListModelsClick(Sender: TObject);
+    procedure tbTemperatureChange(Sender: TObject);
+    procedure tbTopPChange(Sender: TObject);
+  private
+    FSettings: TDelphiAIDevSettings;
+    procedure SendRequest(const AProvider: TC4DAiAvailable; const AApiKey, AQuestion: string);
+    procedure ListModelsForProvider(const AProvider: TC4DAiAvailable; const AApiKey: string);
+  public
+    { Public declarations }
+  end;
+
+var
+  FormTestAIHarness: TFormTestAIHarness;
+
+implementation
+
+{$R *.dfm}
+
+procedure TFormTestAIHarness.FormCreate(Sender: TObject);
+var
+  LProvider: TC4DAiAvailable;
+begin
+  FSettings := TDelphiAIDevSettings.Create;
+
+  cboAIProvider.Items.Clear;
+  for LProvider := Low(TC4DAiAvailable) to High(TC4DAiAvailable) do
+    cboAIProvider.Items.Add(LProvider.ToString);
+  cboAIProvider.ItemIndex := 0;
+
+  mmPrompt.Text := 'Write a simple "Hello, World!" program in Delphi.';
+  edtMaxOutputTokens.Text := '2048';
+  tbTemperature.Position := 5;
+  tbTopP.Position := 5;
+  lblTemperatureValue.Caption := Format('%.2f', [tbTemperature.Position / 10]);
+  lblTopPValue.Caption := Format('%.2f', [tbTopP.Position / 10]);
+end;
+
+procedure TFormTestAIHarness.btnSendClick(Sender: TObject);
+begin
+  if Trim(edtApiKey.Text) = '' then
+  begin
+    ShowMessage('Please enter an API Key.');
+    Exit;
+  end;
+
+  if Trim(mmPrompt.Text) = '' then
+  begin
+    ShowMessage('Please enter a prompt.');
+    Exit;
+  end;
+
+  mmResponse.Text := 'Sending request...';
+  Application.ProcessMessages;
+
+  SendRequest(
+    TC4DAiAvailable(cboAIProvider.ItemIndex),
+    edtApiKey.Text,
+    mmPrompt.Text
+  );
+end;
+
+procedure TFormTestAIHarness.btnListModelsClick(Sender: TObject);
+begin
+  if Trim(edtApiKey.Text) = '' then
+  begin
+    ShowMessage('Please enter an API Key to list models.');
+    Exit;
+  end;
+
+  mmResponse.Text := 'Listing models...';
+  Application.ProcessMessages;
+
+  ListModelsForProvider(
+    TC4DAiAvailable(cboAIProvider.ItemIndex),
+    edtApiKey.Text
+  );
+end;
+
+procedure TFormTestAIHarness.SendRequest(const AProvider: TC4DAiAvailable;
+  const AApiKey, AQuestion: string);
+var
+  LAIFacade: TDelphiAIDevAIFacade;
+  LResponse: IDelphiAIDevAIResponse;
+  LSettings: TDelphiAIDevSettings;
+  Cont1: TStringList;
+begin
+  LSettings := TDelphiAIDevSettings.Create;
+  try
+    case AProvider of
+      TC4DAiAvailable.Gemini: LSettings.ApiKeyGemini := AApiKey;
+      TC4DAiAvailable.OpenAI: LSettings.ApiKeyOpenAI := AApiKey;
+      TC4DAiAvailable.Groq: LSettings.ApiKeyGroq := AApiKey;
+      TC4DAiAvailable.Ollama: LSettings.ApiKeyOllama := AApiKey;
+    end;
+    LSettings.AIDefault := AProvider;
+    LSettings.Temperature := tbTemperature.Position / 10;
+    LSettings.TopP := tbTopP.Position / 10;
+    LSettings.MaxOutputTokens := StrToIntDef(edtMaxOutputTokens.Text, 2048);
+
+    LAIFacade := TDelphiAIDevAIFacade.Create;
+    try
+      LResponse := LAIFacade.AiUse(AProvider, LSettings).ProcessSend(AQuestion).Response;
+      Cont1 := TStringList.Create;
+      try
+        Cont1.Assign(LResponse.GetContent);
+        mmResponse.Text := Cont1.Text;
+        if LResponse.GetStatusCode <> 200 then
+        begin
+          mmResponse.Text := 'Status Code: ' + IntToStr(LResponse.GetStatusCode) + #13#10 + mmResponse.Text;
+        end;
+      finally
+        Cont1.Free;
+      end;
+    finally
+      LAIFacade.Free;
+    end;
+  finally
+    LSettings.Free;
+  end;
+end;
+
+procedure TFormTestAIHarness.ListModelsForProvider(const AProvider: TC4DAiAvailable;
+  const AApiKey: string);
+var
+  LAIFacade: TDelphiAIDevAIFacade;
+  LResponse: IDelphiAIDevAIResponse;
+  LModels: string;
+begin
+  FSettings.ApiKeyGemini := AApiKey;
+  FSettings.AIDefault := AProvider;
+
+  LAIFacade := TDelphiAIDevAIFacade.Create;
+  try
+    LModels := LAIFacade.AiUse(AProvider, FSettings).ListModels;
+    mmResponse.Text := 'Available Models:' + #13#10 + LModels;
+  finally
+    LAIFacade.Free;
+  end;
+end;
+
+procedure TFormTestAIHarness.tbTemperatureChange(Sender: TObject);
+begin
+  lblTemperatureValue.Caption := Format('%.2f', [tbTemperature.Position / 10]);
+end;
+
+procedure TFormTestAIHarness.tbTopPChange(Sender: TObject);
+begin
+  lblTopPValue.Caption := Format('%.2f', [tbTopP.Position / 10]);
+end;
+
+end.
+
+// SDID_Metadata {
+//   "Framework": "ADID Framework v13.0",
+//   "TurnID": 1,
+//   "State Vector Manifest": "Improve Test Harness UI and add API parameter controls.
+Refactor UI with TPageControl and add controls for Temperature, TopP, and MaxOutputTokens.
+"
+// }

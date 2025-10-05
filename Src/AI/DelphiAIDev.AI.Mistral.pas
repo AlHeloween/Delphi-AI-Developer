@@ -17,6 +17,7 @@ type
   private
     FSettings: TDelphiAIDevSettings;
     FResponse: IDelphiAIDevAIResponse;
+    function ListModels: string;
   protected
     function GetResponse(const AQuestion: string): IDelphiAIDevAIResponse;
   public
@@ -79,6 +80,11 @@ begin
   end;
 
   FResponse.SetContentText(LResult.Trim);
+end;
+
+function TDelphiAIDevAIMistral.ListModels: string;
+begin
+  Result := '';
 end;
 
 end.

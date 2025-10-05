@@ -39,8 +39,6 @@ type
     edtMaxOutputTokens: TEdit;
     btnSaveSettings: TButton;
     btnLoadSettings: TButton;
-    tsLog: TTabSheet;
-    mmLog: TMemo;
     procedure FormCreate(Sender: TObject);
     procedure btnSendClick(Sender: TObject);
     procedure btnListModelsClick(Sender: TObject);
@@ -50,7 +48,6 @@ type
     procedure btnLoadSettingsClick(Sender: TObject);
   private
     FSettings: TDelphiAIDevSettings;
-    procedure AddToLog(const AText: string);
     procedure LoadSettings;
     procedure SaveSettings;
     procedure SendRequest(const AProvider: TC4DAiAvailable; const AApiKey, AQuestion: string);
@@ -82,12 +79,6 @@ begin
 
   mmPrompt.Text := 'Write a simple "Hello, World!" program in Delphi.';
   LoadSettings;
-  AddToLog('Test Harness initialized.');
-end;
-
-procedure TFormTestAIHarness.AddToLog(const AText: string);
-begin
-  mmLog.Lines.Add(FormatDateTime('[yyyy-mm-dd hh:nn:ss] ', Now) + AText);
 end;
 
 procedure TFormTestAIHarness.btnSendClick(Sender: TObject);
@@ -199,10 +190,8 @@ var
   LResponse: IDelphiAIDevAIResponse;
   LSettings: TDelphiAIDevSettings;
   Cont1: TStringList;
-  LStatus: string;
 begin
   Screen.Cursor := crHourGlass;
-  LStatus := 'OK';
   try
     LSettings := TDelphiAIDevSettings.Create;
     try
@@ -216,8 +205,6 @@ begin
       LSettings.Temperature := tbTemperature.Position / 10;
       LSettings.TopP := tbTopP.Position / 10;
       LSettings.MaxOutputTokens := StrToIntDef(edtMaxOutputTokens.Text, 2048);
-      AddToLog(Format('Sending request to %s. Temp: %.2f, TopP: %.2f, MaxTokens: %d',
-        [AProvider.ToString, LSettings.Temperature, LSettings.TopP, LSettings.MaxOutputTokens]));
 
       LAIFacade := TDelphiAIDevAIFacade.Create;
       try
@@ -228,13 +215,8 @@ begin
           mmResponse.Text := Cont1.Text;
           if LResponse.GetStatusCode <> 200 then
           begin
-            LStatus := 'FAIL';
             mmResponse.Text := 'Status Code: ' + IntToStr(LResponse.GetStatusCode) + #13#10 + mmResponse.Text;
           end;
-          AddToLog(Format('Response received. Status: %s. Status Code: %d.', [LStatus, LResponse.GetStatusCode]));
-          AddToLog('--- Response Content ---');
-          mmLog.Lines.Add(mmResponse.Text);
-          AddToLog('--- End Response ---');
         finally
           Cont1.Free;
         end;
@@ -257,7 +239,6 @@ var
 begin
   Screen.Cursor := crHourGlass;
   try
-    AddToLog(Format('Listing models for %s.', [AProvider.ToString]));
     FSettings.ApiKeyGemini := AApiKey;
     FSettings.AIDefault := AProvider;
 
@@ -265,10 +246,6 @@ begin
     try
       LModels := LAIFacade.AiUse(AProvider, FSettings).ListModels;
       mmResponse.Text := 'Available Models:' + #13#10 + LModels;
-      AddToLog('Model list received successfully.');
-      AddToLog('--- Models ---');
-      mmLog.Lines.Add(LModels);
-      AddToLog('--- End Models ---');
     finally
       LAIFacade.Free;
     end;
@@ -291,8 +268,8 @@ end.
 
 // SDID_Metadata {
 //   "Framework": "ADID Framework v13.0",
-//   "TurnID": 4,
-//   "State Vector Manifest": "Add a logging tab to record API requests and responses.
-Implement a log tab with a memo to display transaction history.
+//   "TurnID": 3,
+//   "State Vector Manifest": "Add a waiting cursor during API requests.
+Implement a try..finally block to manage the cursor.
 "
 // }
