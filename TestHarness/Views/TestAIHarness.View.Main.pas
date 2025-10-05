@@ -293,6 +293,5 @@ end.
 //   "Framework": "ADID Framework v13.0",
 //   "TurnID": 4,
 //   "State Vector Manifest": "Add a logging tab to record API requests and responses.
-Implement a log tab with a memo to display transaction history.
-"
+//   "Implement a log tab with a memo to display transaction history."
 // }
